@@ -1,2 +1,2 @@
 # Solace
-An esolang
+WIP esolang
