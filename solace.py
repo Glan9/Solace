@@ -4,8 +4,10 @@ import sys
 import re
 import operators
 
-code = ''
-stack = []
+numRegex = '^\\d+(,\\d+)*'
+stringRegex = '^"((\\"|[^"])*?)"'
+charRegex = "^'([\s\S])"
+blockRegex = '^\\{([^{}]*)\\}([<>EMNPS]?)'
 
 """
 depth(o)
@@ -65,9 +67,9 @@ def applyMonad(op, z):
 executeOp(op)
 
 Given an operator, execute it. Errors if not enough elements on the stack.
-
+Return the result.
 """
-def executeOp(op):
+def executeOp(op, stack):
 	if len(stack) < op[0]: # Not enough arguments available
 		sys.stderr.write("Error: Not enough arguments\n")
 		exit(1)
@@ -80,8 +82,67 @@ def executeOp(op):
 			x = stack.pop()
 			return applyDyad(op, x, y)
 
+"""
+executeBlock(block, suffix, stack)
 
-# Opening File
+Given a block and its suffix, and the current stack, execute the block.
+"""
+def executeBlock(block, suffix, stack):
+	if suffix == '':
+		stack += interpret(block, stack)
+	if suffix == 'E':
+		z = stack.pop()
+		results = []
+		for item in ([z] if type(z)==int else z):
+			results += interpret(block, [item])
+		stack += [results]
+
+
+
+"""
+interpret(code, stack)
+
+Interprets the Solace code in the string code. The initial stack is passed an argument.
+Returns the final stack at the end of the program.
+
+"""
+def interpret(code, stack):
+	while len(code) > 0:
+
+		if re.match(numRegex, code) != None:
+			nums = [int(s) for s in re.match(numRegex, code).group(0).split(',')]
+			stack += [nums] if len(nums)>1 else nums
+			code = re.sub(numRegex,'',code)
+			continue
+		elif re.match(stringRegex, code) != None:
+			stack += [[ord(c) for c in re.match(stringRegex, code).group(1)]]
+			code = re.sub(stringRegex,'',code)
+			continue
+		elif re.match(charRegex, code) != None:
+			stack += [ord(re.match(charRegex, code).group(1))]
+			code = re.sub(charRegex,'',code)
+			continue
+		elif re.match(blockRegex, code) != None:
+			block = re.match(blockRegex, code).group(1)
+			suffix = re.match(blockRegex, code).group(2)
+			executeBlock(block, suffix, stack)
+			code = re.sub(blockRegex,'',code)
+			continue
+		elif code[0] in operators.ops:
+			result = executeOp(operators.ops[code[0]], stack)
+			if result != None:
+				stack += [result]
+		
+		code = code[1:]
+
+	return stack
+
+
+
+
+# Running the program
+
+code = ''
 
 if len(sys.argv) > 1:
 	source = open(sys.argv[1], 'r')
@@ -90,44 +151,4 @@ else:
 	sys.stderr.write("Error: No source file specified.\n")
 	exit(1)
 
-
-# Parsing
-
-while len(code) > 0:
-	r = re.compile('\\d+(,\\d+)*')
-
-	if r.match(code) != None:
-		nums = [int(s) for s in r.match(code).group(0).split(',')]
-		stack += [nums] if len(nums)>1 else nums
-		code = re.sub('^\\d+(,\\d+)*','',code)
-		continue
-
-
-	r = '^"((\\"|[^"])*?)"'
-
-	if re.match(r, code) != None:
-		stack += [[ord(c) for c in re.match(r, code).group(1)]]
-		code = re.sub(r,'',code)
-		continue
-
-
-	r = "^'([\s\S])"
-
-	if re.match(r, code) != None:
-		stack += [ord(re.match(r, code).group(1))]
-		code = re.sub(r,'',code)
-		continue
-
-
-	if code[0] in operators.ops:
-		result = executeOp(operators.ops[code[0]])
-		if result != None:
-			stack += [result]
-	
-	code = code[1:]
-
-
-# Just for debugging
-#print('STACK: '+str(stack))
-
-
+interpret(code, []) # Run the code starting with an empty stack

@@ -20,6 +20,18 @@ Lambdas for monadic operators should accept z
 
 """
 
+import sys
+
+def flatten(z):
+	result = []
+	for sub in z:
+		if type(sub)==int:
+			result += [sub]
+		else:
+			result += flatten(sub)
+	return result
+
+
 ops = {
 	'!': [
 		1,
@@ -102,11 +114,15 @@ ops = {
 	'D': [
 		
 	],
-	'E': [
-		
+	'E': [ # Equivalent
+		2,
+		0,
+		lambda x,y: 1 if x == y else 0
 	],
-	'F': [
-		
+	'F': [ # Flatten
+		1,
+		0,
+		lambda z: flatten(z)
 	],
 	'G': [
 		
@@ -239,12 +255,14 @@ ops = {
 		
 	],
 	'p': [
-		
+		1,
+		0,
+		lambda z: sys.stdout.write(''.join([chr(i) for i in flatten(z)])) and None
 	],
 	'q': [
 		1,
 		0,
-		lambda z: print(z)
+		lambda z: sys.stdout.write(str(z)) and None
 	],
 	'r': [
 		
