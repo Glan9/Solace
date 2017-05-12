@@ -7,7 +7,8 @@ import operators
 numRegex = '^\\d+(,\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
-blockRegex = '^\\{([^{}]*)\\}([<>EMNPS]?)'
+arity1Suffixes = '<>EMNPS'
+arity2Suffixes = '?'
 
 """
 depth(o)
@@ -83,19 +84,27 @@ def executeOp(op, stack):
 			return applyDyad(op, x, y)
 
 """
-executeBlock(block, suffix, stack)
+executeBlock(block, suffix, stack, block2='')
 
 Given a block and its suffix, and the current stack, execute the block.
+block2 is an optional argument for arity 2 suffixes.
 """
-def executeBlock(block, suffix, stack):
+def executeBlock(block, suffix, stack, block2=''):
 	if suffix == '':
 		stack += interpret(block, stack)
-	if suffix == 'E':
+	if suffix == 'E': # Each
 		z = stack.pop()
 		results = []
 		for item in ([z] if type(z)==int else z):
 			results += interpret(block, [item])
 		stack += [results]
+	if suffix == '?':
+		cond = stack.pop() # Should we run block 1 or block 2?
+		if cond != 0:
+			stack += interpret(block, stack)  # Run first if cond is truthy
+		else:  
+			stack += interpret(block2, stack) # Run second if cond is falsy
+
 
 
 
@@ -103,7 +112,7 @@ def executeBlock(block, suffix, stack):
 interpret(code, stack)
 
 Interprets the Solace code in the string code. The initial stack is passed an argument.
-Returns the final stack at the end of the program.
+Returns the final stack at the end of the code.
 
 """
 def interpret(code, stack):
@@ -122,11 +131,56 @@ def interpret(code, stack):
 			stack += [ord(re.match(charRegex, code).group(1))]
 			code = re.sub(charRegex,'',code)
 			continue
-		elif re.match(blockRegex, code) != None:
-			block = re.match(blockRegex, code).group(1)
-			suffix = re.match(blockRegex, code).group(2)
-			executeBlock(block, suffix, stack)
-			code = re.sub(blockRegex,'',code)
+		elif code[0] == '{':
+			code = code[1:]
+			block = ''
+			depth = 1
+			while depth>0:
+				if len(code) == 0:
+					print("Error: Unclosed block")
+					exit(1)
+
+				block += code[0]
+				if code[0] == '{':
+					depth += 1
+				elif code[0] == '}':
+					depth -= 1
+				code = code[1:]
+
+			block = block[:-1]
+			
+			if code[0] == '{':
+				code = code[1:]
+				block2 = ''
+				depth = 1
+				while depth>0:
+					if len(code) == 0:
+						print("Error: Unclosed block")
+						exit(1)
+
+					block2 += code[0]
+					if code[0] == '{':
+						depth += 1
+					elif code[0] == '}':
+						depth -= 1
+					code = code[1:]
+
+				block2 = block2[:-1]
+				
+				if code[0] in arity2Suffixes:
+					suffix = code[0]
+					code = code[1:]
+					executeBlock(block, suffix, stack, block2)
+				else:
+					suffix = code[0] if code[0] in arity1Suffixes else ''
+					code = code[1:]
+					executeBlock(block, '', stack)
+					executeBlock(block2, suffix, stack)
+			else:
+				suffix = code[0] if code[0] in arity1Suffixes else ''
+				code = code[1:]
+				executeBlock(block, suffix, stack)
+			
 			continue
 		elif code[0] in operators.ops:
 			result = executeOp(operators.ops[code[0]], stack)

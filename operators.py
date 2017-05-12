@@ -87,17 +87,25 @@ ops = {
 	';': [
 		
 	],
-	'<': [
-		
+	'<': [ # Less than
+		2,
+		1,
+		lambda x,y: 1 if x<y else 0
 	],
-	'=': [
-		
+	'=': [ # Equal
+		2,
+		1,
+		lambda x,y: 1 if x==y else 0
 	],
-	'>': [
-		
+	'>': [ # Greater than
+		2,
+		1,
+		lambda x,y: 1 if x>y else 0
 	],
-	'?': [
-		
+	'?': [ # Compare
+		2,
+		1,
+		lambda x,y: -1 if x<y else 0 if x==y else 1
 	],
 	'@': [
 		
