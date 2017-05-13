@@ -118,7 +118,7 @@ ops = {
 	'?': [ # Compare
 		2,
 		1,
-		lambda x,y: -1 if x<y else 0 if x==y else 1
+		lambda x,y: -1 if x<y else (0 if x==y else 1)
 	],
 	'A': [
 		

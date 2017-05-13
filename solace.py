@@ -108,7 +108,7 @@ def executeBlock(block, suffix, stack, block2=''):
 		stack += [results]
 	if suffix == '?':
 		cond = stack.pop() # Should we run block 1 or block 2?
-		if cond != 0:
+		if (type(cond)==int and cond != 0) or (type(cond)==list and len(cond) != 0):
 			stack += interpret(block, stack)  # Run first if cond is truthy
 		else:  
 			stack += interpret(block2, stack) # Run second if cond is falsy
@@ -140,54 +140,49 @@ def interpret(code, stack):
 			code = re.sub(charRegex,'',code)
 			continue
 		elif code[0] == '{':
-			code = code[1:]
-			block = ''
-			depth = 1
-			while depth>0:
-				if len(code) == 0:
-					print("Error: Unclosed block")
-					exit(1)
+			blocks = [] # The blocks appearing all directly in a row
 
-				block += code[0]
-				if code[0] == '{':
-					depth += 1
-				elif code[0] == '}':
-					depth -= 1
+			while len(code) > 0 and code[0] == '{':
 				code = code[1:]
-
-			block = block[:-1]
-			
-			if code[0] == '{':
-				code = code[1:]
-				block2 = ''
+				block = ''
 				depth = 1
 				while depth>0:
 					if len(code) == 0:
 						print("Error: Unclosed block")
 						exit(1)
 
-					block2 += code[0]
+					block += code[0]
 					if code[0] == '{':
 						depth += 1
 					elif code[0] == '}':
 						depth -= 1
 					code = code[1:]
 
-				block2 = block2[:-1]
-				
-				if code[0] in arity2Suffixes:
+				block = block[:-1]
+				blocks += [block]
+			
+			if len(code) == 0:
+				for b in blocks:
+					executeBlock(b, '', stack)
+			elif code[0] in arity1Suffixes:
+				suffix = code[0]
+				code = code[1:]
+				for b in blocks[:-1]:
+					executeBlock(b, '', stack)
+				executeBlock(blocks[-1], suffix, stack)
+			elif code[0] in arity2Suffixes:
+				if len(blocks) >= 2:
 					suffix = code[0]
 					code = code[1:]
-					executeBlock(block, suffix, stack, block2)
+					for b in blocks[:-2]:
+						executeBlock(b, '', stack)
+					executeBlock(blocks[-2], suffix, stack, block[-1])
 				else:
-					suffix = code[0] if code[0] in arity1Suffixes else ''
-					code = code[1:]
-					executeBlock(block, '', stack)
-					executeBlock(block2, suffix, stack)
+					for b in blocks:
+						executeBlock(b, '', stack)
 			else:
-				suffix = code[0] if code[0] in arity1Suffixes else ''
-				code = code[1:]
-				executeBlock(block, suffix, stack)
+				for b in blocks:
+					executeBlock(b, '', stack)
 			
 			continue
 		elif code[0] in operators.ops:
