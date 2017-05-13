@@ -4,7 +4,7 @@ import sys
 import re
 import operators
 
-numRegex = '^\\d+(,\\d+)*'
+numRegex = '^-?\\d+(,-?\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
 arity1Suffixes = '<>EMNPS'
@@ -43,9 +43,15 @@ def applyDyad(op, x, y):
 		elif depth(x) > depth(y):
 			return [applyDyad(op, i, y) for i in x]
 	elif op[1] == 2:
-		print("Not implemented yet...")
+		if depth(x) == 0:
+			return op[2](x, y)
+		else:
+			return [applyDyad(op, i, y) for i in x]
 	elif op[1] == 3:
-		print("Not implemented yet...")
+		if depth(y) == 0:
+			return op[2](x, y)
+		else:
+			return [applyDyad(op, x, i) for i in y]
 
 
 """
@@ -75,6 +81,8 @@ def executeOp(op, stack):
 		sys.stderr.write("Error: Not enough arguments\n")
 		exit(1)
 	else:
+		if op[0] == 0: # It's a nilad
+			return op[2]()
 		if op[0] == 1: # It's a monad
 			z = stack.pop()
 			return applyMonad(op, z)

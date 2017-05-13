@@ -23,6 +23,8 @@ Lambdas for monadic operators should accept z
 import sys
 
 def flatten(z):
+	if type(z) == int:
+		return [z]
 	result = []
 	for sub in z:
 		if type(sub)==int:
@@ -48,7 +50,9 @@ ops = {
 		lambda z: 1 if z==0 else 0
 	],
 	'#': [
-		
+		2,
+		3,
+		lambda x,y: x[y%len(x)]
 	],
 	'$': [
 		
@@ -115,9 +119,6 @@ ops = {
 		2,
 		1,
 		lambda x,y: -1 if x<y else 0 if x==y else 1
-	],
-	'@': [
-		
 	],
 	'A': [
 		
@@ -231,7 +232,9 @@ ops = {
 		
 	],
 	'a': [
-		
+		1,
+		1,
+		lambda z: -z if z<0 else z
 	],
 	'b': [
 		
@@ -280,7 +283,7 @@ ops = {
 	'p': [
 		1,
 		0,
-		lambda z: sys.stdout.write(''.join([chr(i) for i in flatten(z)])) and None
+		lambda z: sys.stdout.write(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
 	],
 	'q': [
 		1,
@@ -306,7 +309,9 @@ ops = {
 		
 	],
 	'x': [
-		
+		2,
+		3,
+		lambda x,y: ([x] if type(x)==int else x)*y
 	],
 	'y': [
 		
