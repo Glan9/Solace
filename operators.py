@@ -31,6 +31,15 @@ def flatten(z):
 			result += flatten(sub)
 	return result
 
+def gcd(x, y):
+	remainder = x%y
+	while remainder != 0:
+		x = y
+		y = remainder
+		remainder = x%y
+	return y
+
+
 
 ops = {
 	'!': [
@@ -133,7 +142,9 @@ ops = {
 		lambda z: flatten(z)
 	],
 	'G': [
-		
+		2,
+		1,
+		lambda x,y: gcd(x,y)
 	],
 	'H': [
 		
@@ -148,9 +159,9 @@ ops = {
 		
 	],
 	'L': [
+		2,
 		1,
-		0,
-		lambda z: len([z] if type(z)==int else z)
+		lambda x,y: x*y/gcd(x,y)
 	],
 	'M': [
 		
@@ -171,7 +182,9 @@ ops = {
 		
 	],
 	'S': [
-
+		1,
+		0,
+		lambda z: sorted(flatten(z))
 	],
 	'T': [
 		
@@ -251,7 +264,9 @@ ops = {
 		
 	],
 	'l': [
-		
+		1,
+		0,
+		lambda z: len([z] if type(z)==int else z)
 	],
 	'm': [
 		
