@@ -142,6 +142,7 @@ def interpret(code, stack):
 		elif code[0] == '{':
 			blocks = [] # The blocks appearing all directly in a row
 
+			# Search for a series of consecutive blocks
 			while len(code) > 0 and code[0] == '{':
 				code = code[1:]
 				block = ''
@@ -161,10 +162,14 @@ def interpret(code, stack):
 				block = block[:-1]
 				blocks += [block]
 			
+			# After finding them...
+
 			if len(code) == 0:
+				# If there's no suffix
 				for b in blocks:
 					executeBlock(b, '', stack)
 			elif code[0] in arity1Suffixes:
+				# If there's an arity 1 suffix
 				suffix = code[0]
 				code = code[1:]
 				for b in blocks[:-1]:
@@ -172,15 +177,18 @@ def interpret(code, stack):
 				executeBlock(blocks[-1], suffix, stack)
 			elif code[0] in arity2Suffixes:
 				if len(blocks) >= 2:
+					# If there's an arity 2 suffix and at least 2 blocks
 					suffix = code[0]
 					code = code[1:]
 					for b in blocks[:-2]:
 						executeBlock(b, '', stack)
 					executeBlock(blocks[-2], suffix, stack, block[-1])
 				else:
+					# If there's an arity 2 suffix but not 2 blocks
 					for b in blocks:
 						executeBlock(b, '', stack)
 			else:
+				# Just in case
 				for b in blocks:
 					executeBlock(b, '', stack)
 			

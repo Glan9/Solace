@@ -1,5 +1,5 @@
 """
-This file defines a dict containing all operators.
+This file defines a dict containing all operators, a dict of all extended operators
 Each operator is a list of three components: [arity, vectorization, lambda]
 
 arity:         How many arguments it accepts
@@ -41,6 +41,11 @@ def gcd(x, y):
 		remainder = x%y
 	return y
 
+def find(x, y):
+	for i in range(len(x)):
+		if x[i:i+len(y)] == y:
+			return i
+	return -1
 
 
 ops = {
@@ -249,7 +254,9 @@ ops = {
 		
 	],
 	'f': [
-		
+		2,
+		0,
+		lambda x,y: find([x] if type(x)==int else x, [y] if type(y)==int else y)
 	],
 	'g': [
 		
@@ -283,12 +290,12 @@ ops = {
 	'p': [
 		1,
 		0,
-		lambda z: sys.stdout.write(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
+		lambda z: print(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
 	],
 	'q': [
 		1,
 		0,
-		lambda z: sys.stdout.write(str(z)) and None
+		lambda z: print(str(z)) and None
 	],
 	'r': [
 		
