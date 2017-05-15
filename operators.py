@@ -49,15 +49,15 @@ def find(x, y):
 
 
 ops = {
-	'!': [
+	'!': [ # Logical NOT
 		1,
 		1,
 		lambda z: 1 if z==0 else 0
 	],
-	'#': [
+	'#': [ # Index
 		2,
 		3,
-		lambda x,y: x[y%len(x)]
+		lambda x,y: ([x] if type(x)==int else x)[y%len([x] if type(x)==int else x)]
 	],
 	'$': [
 		
@@ -72,7 +72,7 @@ ops = {
 		1,
 		lambda x,y: x&y
 	],
-	'*': [
+	'*': [ # Multiplication
 		2,
 		1,
 		lambda x,y: x*y
@@ -82,17 +82,17 @@ ops = {
 		1,
 		lambda x,y: x+y
 	],
-	'-': [
+	'-': [ # Subtraction
 		2,
 		1,
 		lambda x,y: x-y
 	],
-	'.': [
+	'.': [ # Range
 		1,
 		1,
 		lambda z: [i for i in range(z)]
 	],
-	'/': [
+	'/': [ # Division
 		2,
 		1,
 		lambda x,y: int(x/y)
@@ -147,7 +147,7 @@ ops = {
 		0,
 		lambda z: flatten(z)
 	],
-	'G': [
+	'G': [ # GCD
 		2,
 		1,
 		lambda x,y: gcd(x,y)
@@ -164,7 +164,7 @@ ops = {
 	'K': [
 		
 	],
-	'L': [
+	'L': [ # LCM
 		2,
 		1,
 		lambda x,y: x*y/gcd(x,y)
@@ -181,13 +181,15 @@ ops = {
 	'P': [
 		
 	],
-	'Q': [
+	'Q': [ # Deduplicate
 		
 	],
-	'R': [
-		
+	'R': [ # Reverse
+		1,
+		0,
+		lambda z: ([z] if type(z)==int else z)[::-1]
 	],
-	'S': [
+	'S': [ # Sort
 		1,
 		0,
 		lambda z: sorted(flatten(z))
@@ -204,7 +206,7 @@ ops = {
 	'W': [
 		
 	],
-	'X': [
+	'X': [ # Exponentiation
 		2,
 		1,
 		lambda x,y: x**y
@@ -236,7 +238,7 @@ ops = {
 	'`': [
 		
 	],
-	'a': [
+	'a': [ # Absolute value
 		1,
 		1,
 		lambda z: -z if z<0 else z
@@ -253,7 +255,7 @@ ops = {
 	'e': [
 		
 	],
-	'f': [
+	'f': [ # Find
 		2,
 		0,
 		lambda x,y: find([x] if type(x)==int else x, [y] if type(y)==int else y)
@@ -273,7 +275,7 @@ ops = {
 	'k': [
 		
 	],
-	'l': [
+	'l': [ # Length
 		1,
 		0,
 		lambda z: len([z] if type(z)==int else z)
@@ -287,12 +289,12 @@ ops = {
 	'o': [
 		
 	],
-	'p': [
+	'p': [ # Print as string
 		1,
 		0,
 		lambda z: print(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
 	],
-	'q': [
+	'q': [ # Print as list
 		1,
 		0,
 		lambda z: print(str(z)) and None
@@ -315,13 +317,15 @@ ops = {
 	'w': [
 		
 	],
-	'x': [
+	'x': [ # Repititon
 		2,
 		3,
 		lambda x,y: ([x] if type(x)==int else x)*y
 	],
-	'y': [
-		
+	'y': [ # Sign
+		1,
+		1,
+		lambda z: -1 if z<0 else (1 if z>0 else 0)
 	],
 	'z': [
 		
