@@ -30,7 +30,7 @@ The vectorization behaviour is deteremined by flags:
 
 Lambdas for dyadic operators should accept x and y
 Lambdas for monadic operators should accept z
-Lambdas for niladic operators should accept _=0 (and not make any use of it)
+Lambdas for niladic operators should accept no arguments
 
 """
 
@@ -61,10 +61,7 @@ def find(x, y): # For operator f
 
 def readByte(): # For operator k
 	byte = sys.stdin.read(1)
-	if len(byte)==0:
-		return -1
-	else:
-		return ord(byte)
+	return -1 if len(byte)==0 else ord(byte)
 
 def readLine(): # For operator j
 	line = sys.stdin.readline()
@@ -151,8 +148,10 @@ operators = {
 		0,
 		lambda x,y: ([x] if type(x)==int else x)+([y] if type(y)==int else y)
 	],
-	';': [
-		
+	';': [ # Wrap
+		1,
+		0,
+		lambda z: [z]
 	],
 	'<': [ # Less than
 		2,
@@ -183,7 +182,7 @@ operators = {
 	'C': [ # Cartesian product
 		2,
 		0,
-		lambda x,y: [[x[i], y[j]] for i in range(len(x)) for j in range(len(y))]
+		lambda x,y: [[i, j] for i in x for j in y]
 	],
 	'D': [
 		
@@ -326,17 +325,17 @@ operators = {
 	'i': [ # Read line + eval
 		0,
 		0,
-		lambda _=0: interpret(readLine(), [])
+		lambda: interpret(readLine(), [])
 	],
 	'j': [ # Read line
 		0,
 		0,
-		lambda _=0: [ord(c) for c in readLine()]
+		lambda: [ord(c) for c in readLine()]
 	],
 	'k': [ # Read byte
 		0,
 		0,
-		lambda _=0: readByte()
+		lambda: readByte()
 	],
 	'l': [ # Length
 		1,
@@ -417,12 +416,12 @@ extOperators = {
 		3,
 		lambda x,y: x[-y:]+x[:-y]
 	],
-	'<': [ # Minimum
+	'<': [ # Bitshift left
 		2,
 		1,
 		lambda x,y: x << y
 	],
-	'>': [ # Maximum
+	'>': [ # Bitshift right
 		2,
 		1,
 		lambda x,y: x >> y
@@ -430,7 +429,7 @@ extOperators = {
 	'j': [ # Read all input
 		0,
 		0,
-		lambda _=0: [ord(c) for c in sys.stdin.read()]
+		lambda: [ord(c) for c in sys.stdin.read()]
 	]
 }
 
