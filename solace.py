@@ -10,6 +10,7 @@ charRegex = "^'([\s\S])"
 arity1Suffixes = '<>EMNPS'
 arity2Suffixes = '?'
 
+
 """
 depth(o)
 
