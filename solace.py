@@ -2,13 +2,381 @@
 
 import sys
 import re
-import operators
 
 numRegex = '^-?\\d+(,-?\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
 arity1Suffixes = '<>EMNPS'
 arity2Suffixes = '?'
+
+"""
+OPERATORS
+
+Here we define a dict containing all operators, and a dict of all extended operators
+Each operator is a list of three components: [arity, vectorization, lambda]
+
+arity:         How many arguments it accepts
+vectorization: The vectorization behaviour
+lambda:        The function to call to execute it
+
+Vectorization:
+
+The vectorization behaviour is deteremined by flags:
+
+0 Does not vectorize
+1 Normal vectorization
+2 Vectorizes only over the first argument (only for dyads)
+3 Vectorizes only over the second argument (only for dyads)
+
+Lambdas for dyadic operators should accept x and y
+Lambdas for monadic operators should accept z
+Lambdas for niladic operators should accept _=0 (and not make any use of it)
+
+"""
+
+def flatten(z): # For operator F
+	if type(z) == int:
+		return [z]
+	result = []
+	for sub in z:
+		if type(sub)==int:
+			result += [sub]
+		else:
+			result += flatten(sub)
+	return result
+
+def gcd(x, y): # For operator G
+	remainder = x%y
+	while remainder != 0:
+		x = y
+		y = remainder
+		remainder = x%y
+	return y
+
+def find(x, y): # For operator f
+	for i in range(len(x)):
+		if x[i:i+len(y)] == y:
+			return i
+	return -1
+
+def readByte(): # For operator k
+	byte = sys.stdin.read(1)
+	if len(byte)==0:
+		return -1
+	else:
+		return ord(byte)
+
+def readLine(): # For operator j
+	line = sys.stdin.readline()
+	if line[-1] == '\n':
+		return line[:-1]
+	else:
+		return line
+	
+
+
+operators = {
+	'!': [ # Logical NOT
+		1,
+		1,
+		lambda z: 1 if z==0 else 0
+	],
+	'#': [ # Index
+		2,
+		3,
+		lambda x,y: 0 if len(x)==0 else ([x] if type(x)==int else x)[y%len([x] if type(x)==int else x)]
+	],
+	'$': [
+		1,
+		0,
+		lambda z: z
+	],
+	'%': [ # Modulus
+		2,
+		1,
+		lambda x,y: x%y
+	],
+	'&': [ # Bitwise AND
+		2,
+		1,
+		lambda x,y: x&y
+	],
+	'*': [ # Multiplication
+		2,
+		1,
+		lambda x,y: x*y
+	],
+	'+': [ # Addition
+		2,
+		1,
+		lambda x,y: x+y
+	],
+	'-': [ # Subtraction
+		2,
+		1,
+		lambda x,y: x-y
+	],
+	'.': [ # Range
+		1,
+		1,
+		lambda z: [i for i in range(z)]
+	],
+	'/': [ # Division
+		2,
+		1,
+		lambda x,y: x//y
+	],
+	':': [ # Concatenation
+		2,
+		0,
+		lambda x,y: ([x] if type(x)==int else x)+([y] if type(y)==int else y)
+	],
+	';': [
+		
+	],
+	'<': [ # Less than
+		2,
+		1,
+		lambda x,y: 1 if x<y else 0
+	],
+	'=': [ # Equal
+		2,
+		1,
+		lambda x,y: 1 if x==y else 0
+	],
+	'>': [ # Greater than
+		2,
+		1,
+		lambda x,y: 1 if x>y else 0
+	],
+	'?': [ # Compare
+		2,
+		1,
+		lambda x,y: -1 if x<y else (0 if x==y else 1)
+	],
+	'A': [
+		
+	],
+	'B': [
+		
+	],
+	'C': [
+		
+	],
+	'D': [
+		
+	],
+	'E': [ # Equivalent
+		2,
+		0,
+		lambda x,y: 1 if x == y else 0
+	],
+	'F': [ # Flatten
+		1,
+		0,
+		lambda z: flatten(z)
+	],
+	'G': [ # GCD
+		2,
+		1,
+		lambda x,y: gcd(x,y)
+	],
+	'H': [
+		
+	],
+	'I': [
+		
+	],
+	'J': [
+		
+	],
+	'K': [
+		
+	],
+	'L': [ # LCM
+		2,
+		1,
+		lambda x,y: x*y//gcd(x,y)
+	],
+	'M': [
+		
+	],
+	'N': [
+		
+	],
+	'O': [ # Sort
+		1,
+		0,
+		lambda z: sorted(flatten(z))
+	],
+	'P': [
+		
+	],
+	'Q': [ # Deduplicate
+		
+	],
+	'R': [ # Reverse
+		1,
+		0,
+		lambda z: ([z] if type(z)==int else z)[::-1]
+	],
+	'S': [ 
+
+	],
+	'T': [
+		
+	],
+	'U': [
+		
+	],
+	'V': [
+		
+	],
+	'W': [
+		
+	],
+	'X': [ # Exponentiation
+		2,
+		1,
+		lambda x,y: x**y
+	],
+	'Y': [
+		
+	],
+	'Z': [
+		
+	],
+	'[': [
+		
+	],
+	'\\': [
+		
+	],
+	']': [
+		
+	],
+	'^': [ # Bitwise XOR
+		2,
+		1,
+		lambda x,y: x^y
+		
+	],
+	'_': [
+		
+	],
+	'`': [
+		
+	],
+	'a': [ # Absolute value
+		1,
+		1,
+		lambda z: -z if z<0 else z
+	],
+	'b': [
+		
+	],
+	'c': [
+		
+	],
+	'd': [
+		
+	],
+	'e': [
+		
+	],
+	'f': [ # Find
+		2,
+		0,
+		lambda x,y: find([x] if type(x)==int else x, [y] if type(y)==int else y)
+	],
+	'g': [
+		
+	],
+	'h': [
+		
+	],
+	'i': [ # Read line + eval
+		0,
+		0,
+		lambda _=0: interpret(readLine(), [])
+	],
+	'j': [ # Read line
+		0,
+		0,
+		lambda _=0: [[ord(c) for c in readLine()]]
+	],
+	'k': [ # Read byte
+		0,
+		0,
+		lambda _=0: [readByte()]
+	],
+	'l': [ # Length
+		1,
+		0,
+		lambda z: len([z] if type(z)==int else z)
+	],
+	'm': [
+		
+	],
+	'n': [
+		
+	],
+	'o': [
+		
+	],
+	'p': [ # Print as string
+		1,
+		0,
+		lambda z: print(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
+	],
+	'q': [ # Print as list
+		1,
+		0,
+		lambda z: print(str(z)) and None
+	],
+	'r': [
+		
+	],
+	's': [
+		
+	],
+	't': [
+		
+	],
+	'u': [
+		
+	],
+	'v': [
+		
+	],
+	'w': [
+		
+	],
+	'x': [ # Repititon
+		2,
+		3,
+		lambda x,y: ([x] if type(x)==int else x)*y
+	],
+	'y': [ # Sign
+		1,
+		1,
+		lambda z: -1 if z<0 else (1 if z>0 else 0)
+	],
+	'z': [
+		
+	],
+	'|': [ # Bitwise OR
+		2,
+		1,
+		lambda x,y: x|y
+		
+	],
+	'~': [ # Bitwise NOT
+		1,
+		1,
+		lambda z: ~z
+	]
+}
 
 
 """
@@ -20,6 +388,8 @@ Otherwise, the depth is the maximum level of nesting in the list o.
 def depth(o):
 	if type(o) != list:
 		return 0
+	elif len(o) == 0:
+		return 1
 	else:
 		return 1+max(depth(x) for x in o)
 
@@ -77,20 +447,20 @@ executeOp(op)
 Given an operator, execute it. Errors if not enough elements on the stack.
 Return the result.
 """
-def executeOp(op, stack):
+def executeOp(op, stack, char):
 	if len(stack) < op[0]: # Not enough arguments available
-		sys.stderr.write("Error: Not enough arguments\n")
+		sys.stderr.write("Error on operator '"+char+"': Not enough arguments\n")
 		exit(1)
 	else:
 		if op[0] == 0: # It's a nilad
 			return op[2]()
 		if op[0] == 1: # It's a monad
 			z = stack.pop()
-			return applyMonad(op, z)
+			return [applyMonad(op, z)]
 		if op[0] == 2: # It's a dyad
 			y = stack.pop()
 			x = stack.pop()
-			return applyDyad(op, x, y)
+			return [applyDyad(op, x, y)]
 
 """
 executeBlock(block, suffix, stack, block2='')
@@ -139,6 +509,14 @@ def interpret(code, stack):
 		elif re.match(charRegex, code) != None:
 			stack += [ord(re.match(charRegex, code).group(1))]
 			code = re.sub(charRegex,'',code)
+			continue
+		elif code[0] == '$':
+			# Special case operator since this one returns two values
+			result = executeOp(operators[code[0]], stack, '$')
+			if result != None:
+				stack += result
+				stack += result
+			code = code[1:]
 			continue
 		elif code[0] == '{':
 			blocks = [] # The blocks appearing all directly in a row
@@ -194,12 +572,12 @@ def interpret(code, stack):
 					executeBlock(b, '', stack)
 			
 			continue
-		elif code[0] in operators.ops:
-			result = executeOp(operators.ops[code[0]], stack)
+		elif code[0] in operators:
+			result = executeOp(operators[code[0]], stack, code[0])
 			if result != None:
-				stack += [result]
-		
-		code = code[1:]
+				stack += result
+			code = code[1:]
+			continue
 
 	return stack
 
@@ -218,3 +596,4 @@ else:
 	exit(1)
 
 interpret(code, []) # Run the code starting with an empty stack
+
