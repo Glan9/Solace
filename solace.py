@@ -6,7 +6,7 @@ import re
 numRegex = '^-?\\d+(,-?\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
-arity1Suffixes = '<>EMNPS'
+arity1Suffixes = '*+<>EMOPR'
 arity2Suffixes = '?'
 
 """
@@ -34,7 +34,7 @@ Lambdas for niladic operators should accept _=0 (and not make any use of it)
 
 """
 
-def flatten(z): # For operator F
+def flatten(z): # For operator _
 	if type(z) == int:
 		return [z]
 	result = []
@@ -73,7 +73,17 @@ def readLine(): # For operator j
 	else:
 		return line
 	
-
+def primeFactors(n): # For operator F
+    factors = []
+    d = 2
+    while d*d <= n:
+        while (n % d) == 0:
+            factors.append(d)  # supposing you want multiple factors repeated
+            n //= d
+        d += 1
+    if n > 1:
+       factors.append(n)
+    return factors
 
 operators = {
 	'!': [ # Logical NOT
@@ -89,7 +99,7 @@ operators = {
 	'$': [
 		1,
 		0,
-		lambda z: z
+		lambda z: [z, z]
 	],
 	'%': [ # Modulus
 		2,
@@ -171,10 +181,10 @@ operators = {
 		0,
 		lambda x,y: 1 if x == y else 0
 	],
-	'F': [ # Flatten
+	'F': [ 
 		1,
-		0,
-		lambda z: flatten(z)
+		1,
+		lambda z: primeFactors(z)
 	],
 	'G': [ # GCD
 		2,
@@ -261,8 +271,10 @@ operators = {
 		lambda x,y: x^y
 		
 	],
-	'_': [
-		
+	'_': [ # Flatten
+		1,
+		0,
+		lambda z: flatten(z)
 	],
 	'`': [
 		
@@ -378,6 +390,24 @@ operators = {
 	]
 }
 
+extOperators = {
+	'<': [ # Minimum
+		2,
+		1,
+		lambda x,y: x if x<y else y
+	],
+	'>': [ # Maximum
+		2,
+		1,
+		lambda x,y: x if x>y else y
+	],
+	'j': [ # Read all input
+		0,
+		0,
+		lambda _=0: [[ord(c) for c in sys.stdin.read()]]
+	]
+}
+
 
 """
 depth(o)
@@ -456,7 +486,7 @@ def executeOp(op, stack, char):
 			return op[2]()
 		if op[0] == 1: # It's a monad
 			z = stack.pop()
-			return [applyMonad(op, z)]
+			return applyMonad(op, z) if char in "$" else [applyMonad(op, z)]
 		if op[0] == 2: # It's a dyad
 			y = stack.pop()
 			x = stack.pop()
@@ -477,12 +507,30 @@ def executeBlock(block, suffix, stack, block2=''):
 		for item in ([z] if type(z)==int else z):
 			results += interpret(block, [item])
 		stack += [results]
-	if suffix == '?':
+	if suffix == '?': # Conditional
 		cond = stack.pop() # Should we run block 1 or block 2?
 		if (type(cond)==int and cond != 0) or (type(cond)==list and len(cond) != 0):
-			stack += interpret(block, stack)  # Run first if cond is truthy
+			interpret(block, stack)  # Run first if cond is truthy
 		else:  
-			stack += interpret(block2, stack) # Run second if cond is falsy
+			interpret(block2, stack) # Run second if cond is falsy
+	if suffix == 'R': # Reduce
+		z = stack.pop()
+		if len(z)==0:
+			stack += [z]
+		else:
+			stack += [z[0]]
+			z = z[1:]
+			for item in z:
+				stack += [item]
+				interpret(block, stack)
+	if suffix == '+': # Accumulate
+		z = stack.pop()
+		result = []
+		for i in range(len(z)):
+			result += [z[:i+1]]
+			executeBlock(block, 'R', result)
+		stack += [result]
+
 
 
 
@@ -509,14 +557,6 @@ def interpret(code, stack):
 		elif re.match(charRegex, code) != None:
 			stack += [ord(re.match(charRegex, code).group(1))]
 			code = re.sub(charRegex,'',code)
-			continue
-		elif code[0] == '$':
-			# Special case operator since this one returns two values
-			result = executeOp(operators[code[0]], stack, '$')
-			if result != None:
-				stack += result
-				stack += result
-			code = code[1:]
 			continue
 		elif code[0] == '{':
 			blocks = [] # The blocks appearing all directly in a row
@@ -572,12 +612,28 @@ def interpret(code, stack):
 					executeBlock(b, '', stack)
 			
 			continue
+		elif code[0] == '@':
+			if len(code) > 1:
+				if code[1] in extOperators:
+					result = executeOp(extOperators[code[1]], stack, code[:2])
+					if result != None and result != [None]:
+						stack += result
+					code = code[2:]
+					continue
+				else:
+					print("Error: Undefined extended operator @"+code[1])
+					break
+			else:
+				print("Error: Unfinished extended operator")
+				break
 		elif code[0] in operators:
 			result = executeOp(operators[code[0]], stack, code[0])
-			if result != None:
+			if result != None and result != [None]:
 				stack += result
 			code = code[1:]
 			continue
+
+		code = code[1:]
 
 	return stack
 
