@@ -6,8 +6,8 @@ import re
 numRegex = '^-?\\d+(,-?\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
-arity1Suffixes = '*+<>EMOPR'
-arity2Suffixes = '?'
+arity1Suffixes = '*+<>DEFMOPR'
+arity2Suffixes = '?W'
 
 """
 OPERATORS
@@ -71,16 +71,18 @@ def readLine(): # For operator j
 		return line
 	
 def primeFactors(n): # For operator F
-    factors = []
-    d = 2
-    while d*d <= n:
-        while (n % d) == 0:
-            factors.append(d)  # supposing you want multiple factors repeated
-            n //= d
-        d += 1
-    if n > 1:
-       factors.append(n)
-    return factors
+	if n < 2:
+		return [n]
+	factors = []
+	d = 2
+	while d*d <= n:
+		while (n % d) == 0:
+			factors.append(d)  # supposing you want multiple factors repeated
+			n //= d
+		d += 1
+	if n > 1:
+		factors.append(n)
+	return factors
 
 operators = {
 	'!': [ # Logical NOT
@@ -354,12 +356,12 @@ operators = {
 	'p': [ # Print as string
 		1,
 		0,
-		lambda z: print(''.join([(chr(i) if i>=0 else '') for i in flatten(z)]))
+		lambda z: sys.stdout.write(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
 	],
 	'q': [ # Print as list
 		1,
 		0,
-		lambda z: print(str(z))
+		lambda z: sys.stdout.write(str(z)) and None
 	],
 	'r': [
 		
@@ -448,6 +450,9 @@ def depth(o):
 	else:
 		return 1+max(depth(x) for x in o)
 
+
+def isTruthy(z):
+	return (type(z)==int and z != 0) or (type(z)==list and len(z) > 0)
 
 """
 applyDyad(op, x, y)
@@ -555,8 +560,49 @@ def executeBlock(block, suffix, stack, block2=''):
 			result.append(z[:i+1])
 			executeBlock(block, 'R', result)
 		stack.append(result)
-
-
+	if suffix == 'W': # While loop
+		while True:
+			interpret(block, stack)
+			z = stack.pop()
+			if isTruthy(z):
+				interpret(block2, stack)
+			else:
+				break
+	if suffix == 'P': # Pairwise
+		z = stack.pop()
+		result = []
+		pairs = [[z[i], j] for i in range(len(z)) for j in z[:i]+z[i+1:]]
+		for pair in pairs:
+			result += interpret(block, pair)
+		stack.append(result)
+	if suffix == 'F': # Filter
+		z = stack.pop()
+		results = []
+		for i in range(len(([z] if type(z)==int else z))):
+			r = interpret(block, [z[i]]).pop()
+			if isTruthy(r):
+				results.append(z[i])
+		stack.append(results)
+	if suffix == 'D': # Filter out
+		z = stack.pop()
+		results = []
+		for i in range(len(([z] if type(z)==int else z))):
+			r = interpret(block, [z[i]]).pop()
+			if not isTruthy(r):
+				results.append(z[i])
+		stack.append(results)
+	if suffix == 'O': # Sort
+		z = stack.pop()
+		results = [[interpret(block, [i]), i] for i in z]
+		stack.append([i[1] for i in sorted(results)])
+	if suffix == '>': # Max
+		z = stack.pop()
+		results = [[interpret(block, [i]), i] for i in z]
+		stack.append(max(results)[1])
+	if suffix == '<': # Min
+		z = stack.pop()
+		results = [[interpret(block, [i]), i] for i in z]
+		stack.append(min(results)[1])
 
 
 
@@ -602,9 +648,11 @@ def interpret(code, stack):
 					elif code[0] == '}':
 						depth -= 1
 					code = code[1:]
+					
 
 				block = block[:-1]
-				blocks += [block]
+				blocks.append(block)
+				
 			
 			# After finding them...
 
@@ -626,7 +674,7 @@ def interpret(code, stack):
 					code = code[1:]
 					for b in blocks[:-2]:
 						executeBlock(b, '', stack)
-					executeBlock(blocks[-2], suffix, stack, block[-1])
+					executeBlock(blocks[-2], suffix, stack, blocks[-1])
 				else:
 					# If there's an arity 2 suffix but not 2 blocks
 					for b in blocks:
