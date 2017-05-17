@@ -2,12 +2,14 @@
 
 import sys
 import re
+import datetime
+import time
 
 numRegex = '^-?\\d+(,-?\\d+)*'
 stringRegex = '^"((\\"|[^"])*?)"'
 charRegex = "^'([\s\S])"
 arity1Suffixes = '*+<>DEFMOPR'
-arity2Suffixes = '?W'
+arity2Suffixes = '?UW'
 
 """
 OPERATORS
@@ -186,8 +188,10 @@ operators = {
 		0,
 		lambda x,y: [[i, j] for i in x for j in y]
 	],
-	'D': [
-		
+	'D': [ # Discard
+		1,
+		0,
+		lambda z: None
 	],
 	'E': [ # Equivalent
 		2,
@@ -356,18 +360,20 @@ operators = {
 	'p': [ # Print as string
 		1,
 		0,
-		lambda z: sys.stdout.write(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and None
+		lambda z: sys.stdout.write(''.join([(chr(i) if i>=0 else '') for i in flatten(z)])) and sys.stdout.flush() and None
 	],
 	'q': [ # Print as list
 		1,
 		0,
-		lambda z: sys.stdout.write(str(z)) and None
+		lambda z: sys.stdout.write(str(z)) and sys.stdout.flush() and None
 	],
 	'r': [
 		
 	],
 	's': [
-		
+		2,
+		0,
+		lambda x, y: [y, x]
 	],
 	't': [
 		
@@ -427,6 +433,17 @@ extOperators = {
 		2,
 		1,
 		lambda x,y: x >> y
+	],
+	'T': [ # Datetime
+		0,
+		0,
+		lambda _=0: [datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day, 
+		datetime.datetime.now().hour, datetime.datetime.now().minute, datetime.datetime.now().second, datetime.datetime.now().microsecond//1000]
+	],
+	't': [ # Milliseconds since epoch
+		0,
+		0,
+		lambda _=0: int(time.time()*1000)
 	],
 	'j': [ # Read all input
 		0,
@@ -568,6 +585,14 @@ def executeBlock(block, suffix, stack, block2=''):
 				interpret(block2, stack)
 			else:
 				break
+	if suffix == 'U': # While loop
+		while True:
+			interpret(block, stack)
+			z = stack.pop()
+			if not isTruthy(z):
+				interpret(block2, stack)
+			else:
+				break
 	if suffix == 'P': # Pairwise
 		z = stack.pop()
 		result = []
@@ -702,7 +727,7 @@ def interpret(code, stack):
 		elif code[0] in operators:
 			result = executeOp(operators[code[0]], stack, code[0])
 			if result != None:
-				if code[0] in "$i": # Some operators push mutliple values to the stack.
+				if code[0] in "$is": # Some operators push mutliple values to the stack.
 					stack += result
 				else:
 					stack.append(result)
