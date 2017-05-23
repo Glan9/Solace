@@ -27,3 +27,5 @@ It is also possible to use a single quote `'` followed by any character, which p
 Blocks are code enclosed in `{` and `}`. Ordinarily, a block is simply run as if the braces weren't there. But if the block is followed by a valid suffix, it changes the way the block is run. For example, by using the `E` suffix, the block can be run on every element of a list. The following code would insert a space after every character in `Hello, World!`:
 
     "Hello, World!"{' :}Ep
+
+For a full description of blocks, [see here](https://github.com/splcurran/Solace/blob/master/Blocks.md).
