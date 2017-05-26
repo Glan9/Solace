@@ -77,7 +77,7 @@ Symbol | Arity | Result
 `n` | | 
 `o` | | 
 `p` | 1 | Flatten and print *z* as Unicode characters.
-`q` | 1 | Push a string representation of *z* (as a list).
+`q` | 1 | Print a string representation of *z* (as a list).
 `r` | | 
 `s` | 1 | Push *y*, then push *x* (swap).
 `t` | | 
