@@ -19,7 +19,7 @@ Symbol | Arity | Result
 `(` | 2 | Slice *x* before index *y* (modular).
 `)` | 2 | Slice *x* after index *y* (modular).
 `*` | 2 | *x* times *y*.
-`+` | 2 | *x* plus *y.
+`+` | 2 | *x* plus *y*.
 `-` | 2 | *x* minus *y*.
 `.` | 1 | The range from 0 up to *z*-1
 `/` | 2 | *x* integer divided by *y*.
@@ -94,12 +94,12 @@ Symbol | Arity | Result
 
 Symbol | Arity | Result
 --- | --- | ---
-@( | 2 | Rotate *x* *y* elements left.
-@) | 2 | Rotate *x* *y* elements right.
-@< | 2 | Bitshift *x* left by *y*.
-@> | 2 | Bitshift *x* right by *y*.
-@T | 0 | Push the time as an array: [year, month, day, hour, minute, second, millisecond]
-@j | 0 | Read all input and push it as an array of code points.
-@t | 0 | Push the milliseconds passed since the Unix epoch (since 00:00:00 January 1, 1970).
+`@(` | 2 | Rotate *x* *y* elements left.
+`@)` | 2 | Rotate *x* *y* elements right.
+`@<` | 2 | Bitshift *x* left by *y*.
+`@>` | 2 | Bitshift *x* right by *y*.
+`@T` | 0 | Push the time as an array: [year, month, day, hour, minute, second, millisecond]
+`@j` | 0 | Read all input and push it as an array of code points.
+`@t` | 0 | Push the milliseconds passed since the Unix epoch (since 00:00:00 January 1, 1970).
 
 
